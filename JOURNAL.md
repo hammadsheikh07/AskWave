@@ -21,6 +21,8 @@
 
 **Supabase MCP** — project + schema access from CLI.
 
+**Vercel** — hosting, auto-deploy on every push to `main` and preview deploy on every PR. Live at <https://askwave.vercel.app>.
+
 ---
 
 ## Sessions
@@ -33,3 +35,4 @@
 - Scaffolded Next.js 15 + Tailwind v4 + Supabase boilerplate (no feature code).
 - Added Claude auto-review GitHub Actions workflow (`.github/workflows/claude-review.yml`).
 - Wrote `README.md`.
+- Set up Vercel project `askwave`, pinned framework via `vercel.json`, connected GitHub for auto-deploys, first production deploy live at <https://askwave.vercel.app>.
