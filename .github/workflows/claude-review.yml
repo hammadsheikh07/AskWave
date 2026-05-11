@@ -1,0 +1,64 @@
+name: Claude PR Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+  id-token: write
+
+concurrency:
+  group: claude-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Claude review
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ secrets.PAT }}
+          claude_args: '--allowed-tools "Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh pr comment:*),Bash(gh search:*),Bash(git log:*),Bash(git diff:*),Bash(git show:*)"'
+          prompt: |
+            You are reviewing pull request #${{ github.event.pull_request.number }} in ${{ github.repository }}.
+
+            Step 1 — Read the PR:
+              gh pr view ${{ github.event.pull_request.number }}
+              gh pr diff ${{ github.event.pull_request.number }}
+
+            Step 2 — Review against these criteria, in priority order:
+              1. Bugs, logic errors, race conditions.
+              2. Security issues (auth, RLS policies, input validation, leaked secrets).
+              3. Adherence to the conventions in IMPLEMENTATION.md — especially:
+                 - No inline `style={{ ... }}` props anywhere. Tailwind utility classes only.
+                 - One responsibility per component; soft 80-line cap per file.
+                 - Side effects live in hooks under `hooks/`, not in components.
+                 - No CSS-in-JS libraries.
+              4. Type safety — no implicit `any`, no `as unknown as` escape hatches, no `!` on values that can actually be null.
+              5. Tests if the PR adds or modifies non-trivial logic.
+
+            Step 3 — Post ONE summary comment:
+              Write the body to a temp file and run:
+                gh pr comment ${{ github.event.pull_request.number }} --body-file <file>
+
+              Format the body as:
+                **Verdict:** LGTM | Minor nits | Needs changes
+
+                - [blocking] short finding with `file.tsx:42` reference
+                - [nit] short finding with `file.tsx:42` reference
+
+              Rules:
+                - Skip praise. Skip restating what the PR does.
+                - If there are zero findings, post exactly: `**Verdict:** LGTM — no issues found.`
+                - Group findings by severity (blocking first), keep each to one or two lines.
+                - Do NOT use `gh pr review` (no approve / request-changes). Comment only.
