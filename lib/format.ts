@@ -1,3 +1,10 @@
+import type { Question } from "@/lib/types";
+
+export function compareQuestions(a: Question, b: Question): number {
+  if (b.vote_count !== a.vote_count) return b.vote_count - a.vote_count;
+  return b.created_at < a.created_at ? -1 : 1;
+}
+
 export function relativeTime(iso: string): string {
   const then = new Date(iso).getTime();
   if (isNaN(then)) return "unknown";
