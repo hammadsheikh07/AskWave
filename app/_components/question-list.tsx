@@ -6,12 +6,14 @@ type Props = {
   questions: Question[];
   hasVoted: (id: string) => boolean;
   onToggleVote: (id: string) => void;
+  disabled?: boolean;
 };
 
 export default function QuestionList({
   questions,
   hasVoted,
   onToggleVote,
+  disabled,
 }: Props) {
   if (questions.length === 0) return <EmptyState />;
   return (
@@ -22,6 +24,7 @@ export default function QuestionList({
             question={q}
             hasVoted={hasVoted(q.id)}
             onToggleVote={() => onToggleVote(q.id)}
+            disabled={disabled}
           />
         </li>
       ))}

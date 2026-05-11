@@ -4,12 +4,13 @@ import type { Question } from "@/lib/types";
 
 export default async function HomePage() {
   const supabase = await getSupabaseServer();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("questions")
     .select("id, body, created_at, vote_count")
     .order("vote_count", { ascending: false })
     .order("created_at", { ascending: false })
     .limit(50);
+  if (error) console.error("HomePage: failed to load questions", error);
   const initialQuestions: Question[] = data ?? [];
 
   return (

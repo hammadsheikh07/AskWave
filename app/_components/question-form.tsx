@@ -43,6 +43,7 @@ export default function QuestionForm({ disabled }: Props) {
         value={body}
         onChange={(e) => setBody(e.target.value)}
         placeholder="Ask anything…"
+        aria-label="Your question"
         rows={3}
         className="w-full resize-none rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm focus:border-neutral-500 focus:outline-none"
       />
