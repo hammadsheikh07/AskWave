@@ -8,7 +8,7 @@ export default function QuestionMeta({ createdAt }: Props) {
   return (
     <time
       dateTime={createdAt}
-      className="text-xs tabular-nums text-neutral-500"
+      className="text-xs text-neutral-500"
     >
       {relativeTime(createdAt)}
     </time>
