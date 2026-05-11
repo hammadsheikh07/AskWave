@@ -36,3 +36,4 @@
 - Added Claude auto-review GitHub Actions workflow (`.github/workflows/claude-review.yml`).
 - Wrote `README.md`.
 - Set up Vercel project `askwave`, pinned framework via `vercel.json`, connected GitHub for auto-deploys, first production deploy live at <https://askwave.vercel.app>.
+- Wrote `TASKS.md` — 13 atomic tasks (T01–T13) covering the MVP, each sized for one issue + one PR, with explicit dependency notes for parallel execution.
