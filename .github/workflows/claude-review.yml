@@ -20,7 +20,7 @@ jobs:
     steps:
       - name: Tag @claude on the PR
         env:
-          GH_TOKEN: ${{ secrets.PAT }}
+          GH_TOKEN: ${{ secrets.PAT || github.token }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           REPO: ${{ github.repository }}
           EVENT: ${{ github.event.action }}
