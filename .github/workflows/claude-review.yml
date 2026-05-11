@@ -7,6 +7,7 @@ on:
 jobs:
   trigger-review:
     runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
     steps:
       - name: Comment @claude on PR
         env:
