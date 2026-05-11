@@ -19,7 +19,7 @@ export function useAnonymousSession(): State {
         const { data: signed } = await supabase.auth.signInAnonymously();
         userId = signed.user?.id ?? null;
       }
-      if (!cancelled) setState({ userId, ready: true });
+      if (!cancelled) setState({ userId, ready: userId !== null });
     })();
 
     return () => {
