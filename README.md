@@ -48,14 +48,13 @@ These are enforced in code review (see CI/CD below) and in [IMPLEMENTATION.md §
 
 ## CI/CD
 
-Every pull request — on open and on every new commit — is reviewed automatically by Claude via [`.github/workflows/claude-review.yml`](./.github/workflows/claude-review.yml). The workflow posts a single summary comment with `[blocking]` and `[nit]` findings, checked against the conventions above plus the usual bug/security/type-safety axes.
+Every pull request — on `opened`, `ready_for_review`, or `reopened` — is reviewed automatically by Claude via [`.github/workflows/claude-review.yml`](./.github/workflows/claude-review.yml). The workflow posts an `@claude` mention on the PR; the [Claude Code GitHub App](https://github.com/apps/claude) (installed on the repo) responds with the review.
 
-Required repo secrets:
+Required repo secret:
 
-| Secret                      | Purpose                                              |
-| --------------------------- | ---------------------------------------------------- |
-| `CLAUDE_CODE_OAUTH_TOKEN`   | Authenticates the Claude Code GitHub Action.         |
-| `PAT`                       | Posts review comments under your account.            |
+| Secret      | Purpose                                       |
+| ----------- | --------------------------------------------- |
+| `PAT_TOKEN` | Posts the `@claude` mention under your account. Classic PAT with `repo` scope. |
 
 ## Scripts
 

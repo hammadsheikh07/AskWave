@@ -1,55 +1,18 @@
-name: Request Claude PR Review
+name: Auto Review
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened]
-
-permissions:
-  contents: read
-  pull-requests: write
-  issues: write
-
-concurrency:
-  group: claude-review-${{ github.event.pull_request.number }}
-  cancel-in-progress: true
+    types: [opened, ready_for_review, reopened]
 
 jobs:
-  mention-claude:
+  trigger-review:
     runs-on: ubuntu-latest
     if: github.event.pull_request.draft == false
     steps:
-      - name: Tag @claude on the PR
+      - name: Comment @claude on PR
         env:
-          GH_TOKEN: ${{ secrets.PAT }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          REPO: ${{ github.repository }}
-          EVENT: ${{ github.event.action }}
+          GH_TOKEN: ${{ secrets.PAT_TOKEN }}
         run: |
-          gh pr comment "$PR_NUMBER" --repo "$REPO" --body "$(cat <<'EOF'
-          @claude please review this PR.
-
-          **Criteria, in priority order:**
-          1. Bugs, logic errors, race conditions.
-          2. Security issues (auth, RLS policies, input validation, leaked secrets).
-          3. Adherence to [`IMPLEMENTATION.md`](../blob/main/IMPLEMENTATION.md) §6 conventions:
-             - No inline `style={{ ... }}` props. Tailwind utility classes only.
-             - One responsibility per component; ~80-line soft cap per file.
-             - Side effects live in `hooks/`, not components.
-             - No CSS-in-JS libraries.
-          4. Type safety — no implicit `any`, no `as unknown as` escapes, no `!` on values that can actually be null.
-          5. Tests if the PR adds or modifies non-trivial logic.
-
-          **Output:** one summary comment formatted as:
-
-          \`\`\`
-          **Verdict:** LGTM | Minor nits | Needs changes
-
-          - [blocking] short finding with \`file.tsx:42\` reference
-          - [nit] short finding with \`file.tsx:42\` reference
-          \`\`\`
-
-          - Skip praise. Skip restating what the PR does.
-          - If clean, post exactly: \`**Verdict:** LGTM — no issues found.\`
-          - Do not approve or request changes; comment only.
-          EOF
-          )"
+          gh pr comment ${{ github.event.pull_request.number }} \
+            --repo ${{ github.repository }} \
+            --body "@claude"
