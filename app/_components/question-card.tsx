@@ -1,6 +1,7 @@
 import QuestionBody from "./question-body";
 import QuestionMeta from "./question-meta";
 import UpvoteButton from "./upvote-button";
+import { cn } from "@/lib/cn";
 import type { Question } from "@/lib/types";
 
 type Props = {
@@ -8,6 +9,7 @@ type Props = {
   hasVoted: boolean;
   onToggleVote: () => void;
   disabled?: boolean;
+  tone?: string;
 };
 
 export default function QuestionCard({
@@ -15,9 +17,15 @@ export default function QuestionCard({
   hasVoted,
   onToggleVote,
   disabled,
+  tone,
 }: Props) {
   return (
-    <article className="flex items-start gap-3 rounded-lg border border-neutral-200 bg-white p-4">
+    <article
+      className={cn(
+        "flex items-start gap-3 rounded-lg border p-4 shadow-sm transition-shadow hover:shadow-md",
+        tone ?? "border-neutral-200 bg-white",
+      )}
+    >
       <UpvoteButton
         count={question.vote_count}
         hasVoted={hasVoted}

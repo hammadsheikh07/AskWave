@@ -38,14 +38,17 @@ export default function QuestionForm({ disabled }: Props) {
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-2">
+    <form
+      onSubmit={onSubmit}
+      className="space-y-2 rounded-xl border border-neutral-200 bg-white p-4 shadow-sm"
+    >
       <textarea
         value={body}
         onChange={(e) => setBody(e.target.value)}
         placeholder="Ask anything…"
         aria-label="Your question"
         rows={3}
-        className="w-full resize-none rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm focus:border-neutral-500 focus:outline-none"
+        className="w-full resize-none rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-200"
       />
       <div className="flex items-center justify-between">
         <CharCounter count={body.length} max={MAX} />
@@ -53,7 +56,7 @@ export default function QuestionForm({ disabled }: Props) {
           type="submit"
           disabled={submitDisabled}
           className={cn(
-            "rounded-md bg-neutral-900 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-neutral-800",
+            "rounded-md bg-slate-900 px-4 py-1.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-slate-800",
             "disabled:cursor-not-allowed disabled:opacity-50",
           )}
         >
