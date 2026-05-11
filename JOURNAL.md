@@ -50,3 +50,8 @@
 - Opened tracking issues for every code task plus the two manual checklists: T02 (#3, dashboard + env vars) and T13 (#18, smoke test).
 - Debugged "Post button disabled" — `curl` against `/auth/v1/signup` returned `anonymous_provider_disabled` (HTTP 422), confirming the T02 toggle in the Supabase dashboard is still off.
 - Resolved `app-pages-internals.js` 404s caused by two `next dev` processes sharing the same `.next` (ports 3000 + 3001 racing on the build manifest); killed both, wiped `.next`, restarted one clean server on :3000.
+
+### Session 03 — 2026-05-11
+
+- T09+T10+T11+T12 (#17, merged): addressed review feedback and shipped. `Feed` now guards concurrent vote toggles with a `pendingRef` set (try/finally clears the lock even on throw), threads `disabled={!ready}` through `QuestionList` → `QuestionCard` → `UpvoteButton` so the button visibly disables during the anon-session bootstrap, adds `aria-label="Your question"` to the textarea, and surfaces SSR query failures in `app/page.tsx` via `console.error` instead of silently rendering an empty feed.
+- MVP code complete on `main` — all four batched PRs (#4, #8, #12, #17) merged. Remaining work is the two manual checklists: T02 (#3, anon-auth toggle) and T13 (#18, smoke test).
