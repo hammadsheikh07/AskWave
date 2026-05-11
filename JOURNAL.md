@@ -55,3 +55,13 @@
 
 - T09+T10+T11+T12 (#17, merged): addressed review feedback and shipped. `Feed` now guards concurrent vote toggles with a `pendingRef` set (try/finally clears the lock even on throw), threads `disabled={!ready}` through `QuestionList` → `QuestionCard` → `UpvoteButton` so the button visibly disables during the anon-session bootstrap, adds `aria-label="Your question"` to the textarea, and surfaces SSR query failures in `app/page.tsx` via `console.error` instead of silently rendering an empty feed.
 - MVP code complete on `main` — all four batched PRs (#4, #8, #12, #17) merged. Remaining work is the two manual checklists: T02 (#3, anon-auth toggle) and T13 (#18, smoke test).
+
+### Session 04 — 2026-05-11
+
+- UI refresh, IdeaBoardz-inspired light pastel rainbow. Per-card tone picked deterministically from a hash of `question.id` so colors stay stable across re-renders and realtime updates (no flicker when vote counts change or new questions stream in).
+- `question-list.tsx`: 6-tone palette (`amber/emerald/sky/rose/violet/orange` at `/60` opacity over a stone-50 page bg). Tones are static class strings so Tailwind v4's JIT picks them up.
+- `question-card.tsx`: accepts a `tone` prop, adds `shadow-sm` + `hover:shadow-md` lift; falls back to neutral white if no tone supplied.
+- `upvote-button.tsx`: voted state pops in solid rose-500/white; resting state hints rose on hover.
+- `question-form.tsx`: wrapped in a white card with shadow; submit button landed on solid `bg-slate-900` after an initial violet→fuchsia gradient was rejected.
+- `empty-state.tsx`: violet dashed border on a faint violet wash so the empty feed still has personality.
+- Added `globals.d.ts` (`declare module "*.css";`) to silence the editor TS diagnostic for the side-effect `import "./globals.css"` in `app/layout.tsx` — picked up by the existing `**/*.ts` glob in `tsconfig.json`.
