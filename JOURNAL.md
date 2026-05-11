@@ -37,3 +37,5 @@
 - Wrote `README.md`.
 - Set up Vercel project `askwave`, pinned framework via `vercel.json`, connected GitHub for auto-deploys, first production deploy live at <https://askwave.vercel.app>.
 - Wrote `TASKS.md` — 13 atomic tasks (T01–T13) covering the MVP, each sized for one issue + one PR, with explicit dependency notes for parallel execution.
+- Reworked CI/CD into a two-workflow pattern: `auto-review` (trigger) posts `@claude` on PR open via `PAT_TOKEN`; `claude.yml` (responder) runs `anthropics/claude-code-action` on `issue_comment` containing `@claude` via `CLAUDE_CODE_OAUTH_TOKEN`. Replaced the original single-workflow that failed with 401s.
+- Synced `main` into all open PR branches (`t01-db-schema`, `t03-t05-presentational`, `t06-t08-hooks`) so each carries the new trigger workflow; close+reopened PRs #4 and #8 to fire the responder.

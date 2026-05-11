@@ -7,6 +7,7 @@ export function compareQuestions(a: Question, b: Question): number {
 
 export function relativeTime(iso: string): string {
   const then = new Date(iso).getTime();
+  if (isNaN(then)) return "unknown";
   const diff = Math.max(0, Math.floor((Date.now() - then) / 1000));
   if (diff < 5) return "now";
   if (diff < 60) return `${diff}s ago`;
