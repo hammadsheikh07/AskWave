@@ -157,20 +157,60 @@ The client also tracks "which questions has *this* user voted on" via a one-time
 │   ├── page.tsx                 Server Component — SSR initial top-N questions
 │   ├── globals.css              Tailwind v4 entry
 │   └── _components/
-│       ├── feed.tsx             'use client' — realtime + optimistic state
-│       ├── question-form.tsx    'use client' — submit handler
-│       └── question-card.tsx    upvote button + count + body
+│       ├── feed.tsx             'use client' — composition root for the feed
+│       ├── question-list.tsx    pure rendering loop over the sorted array
+│       ├── question-card.tsx    one row — composes body + meta + vote button
+│       ├── question-body.tsx    formatted question text
+│       ├── question-meta.tsx    relative timestamp
+│       ├── upvote-button.tsx    button + count + voted state
+│       ├── question-form.tsx    submit form (textarea + submit)
+│       ├── char-counter.tsx     280-char counter sub-component
+│       └── empty-state.tsx      shown when the feed is empty
+├── hooks/
+│   ├── use-anonymous-session.ts bootstraps signInAnonymously()
+│   ├── use-realtime-questions.ts subscribes to postgres_changes
+│   └── use-voted-questions.ts   seeds + maintains the Set of voted IDs
 └── lib/
-    └── supabase/
-        ├── client.ts            browser singleton (uses publishable key)
-        └── server.ts            SSR fetch client (cookies-aware via @supabase/ssr)
+    ├── supabase/
+    │   ├── client.ts            browser singleton (publishable key)
+    │   └── server.ts            SSR fetch client (cookies via @supabase/ssr)
+    ├── format.ts                relative-time formatter, sort comparator
+    └── types.ts                 Question, Vote — derived from generated types
 ```
 
 No `src/` directory — the project is small enough to live at the root.
 
 ---
 
-## 6. Component responsibilities
+## 6. Architecture conventions
+
+These rules are non-negotiable for the duration of this build. They exist so the codebase stays reviewable as it grows and so styling stays portable.
+
+### Divide and conquer
+
+- **One component, one responsibility.** A component renders one thing or composes a small number of other components. If a file is doing data fetching *and* layout *and* event handling *and* presentation, split it.
+- **Soft size cap: 80 lines per component file.** Above that, you are almost certainly mixing concerns. Extract sub-components or hooks until each file fits.
+- **Pure where possible.** Presentational components (`QuestionBody`, `QuestionMeta`, `UpvoteButton`, `CharCounter`, `EmptyState`) take props and render. They do not call Supabase, do not own state beyond UI ephemera, and do not subscribe to anything.
+- **Side effects live in hooks.** Realtime subscription, anonymous-session bootstrap, voted-set seeding — each gets its own custom hook in `hooks/`. Components consume hooks; hooks consume the Supabase client.
+- **Composition over props drilling.** If a prop is being threaded through more than two levels, lift state into a hook or reach for context rather than widening every signature.
+
+### No inline styles
+
+- **`style={{ ... }}` is forbidden** in component code. No exceptions for "just this one rule" or "it's only one property."
+- **All styling goes through Tailwind utility classes** on `className`. Conditional classes use a small `cn()` helper (clsx-style) — never string concatenation.
+- **Truly repeated class combinations** get extracted into a named component (preferred) or, as a last resort, an `@apply` rule in `globals.css`. We do not invent ad-hoc utility shortcuts.
+- **No CSS-in-JS libraries.** No styled-components, no emotion, no `style` objects. Tailwind only.
+- **Design tokens** (colors, spacing scale) come from the Tailwind config. If a value is reached for twice, it belongs in the config, not inlined.
+
+### Naming and structure
+
+- Filenames are `kebab-case.tsx`. Exported component names are `PascalCase`. There is exactly one default-exported component per file, named to match the file.
+- Hooks are `use-*.ts` and live in `hooks/`. They return a typed object, not a tuple, once they expose more than one value.
+- Shared DB row shapes live in `lib/types.ts` and are derived from `supabase gen types` output (pasted in manually for the MVP, not wired through CI).
+
+---
+
+## 7. Component responsibilities
 
 ### `app/page.tsx` (Server Component)
 - Creates a server Supabase client.
@@ -191,15 +231,28 @@ No `src/` directory — the project is small enough to live at the root.
 - On success: clear the textarea. Realtime delivers the INSERT and adds it to the feed — no manual prepend.
 
 ### `app/_components/question-card.tsx`
-- Renders body, relative timestamp, vote count, upvote button.
-- Button shows filled state if user has voted; click toggles:
-  - If not voted: insert into `votes`. On unique-violation (`code === '23505'`) silently treat as already voted (race with realtime).
-  - If voted: delete from `votes`.
-- Optimistically updates local count + voted set; rolls back on error.
+- Composition only — renders `<QuestionBody>`, `<QuestionMeta>`, and `<UpvoteButton>`.
+- No data fetching, no state of its own. Receives `question` + `hasVoted` + `onToggleVote` from the feed.
+
+### `app/_components/upvote-button.tsx`
+- Receives `count`, `hasVoted`, `onClick`. Pure presentational.
+- Voted state communicated via `className` only (no inline styles).
+
+### `app/_components/question-body.tsx`, `question-meta.tsx`, `char-counter.tsx`, `empty-state.tsx`
+- Each renders one thing from props. No effects, no Supabase imports.
+
+### `hooks/use-anonymous-session.ts`
+- On mount: `getSession()` → if null, `signInAnonymously()` → returns the resolved `user_id` plus a `ready` boolean.
+
+### `hooks/use-realtime-questions.ts`
+- Takes `initialQuestions`, opens the `postgres_changes` channel, exposes a sorted array plus an optimistic `applyVote(questionId, delta)` callback used for instant UI feedback before the trigger's UPDATE event arrives.
+
+### `hooks/use-voted-questions.ts`
+- Takes the `user_id`, seeds a `Set<question_id>` from `votes`, exposes `hasVoted(id)` and `toggleVote(id)` which writes to Supabase and updates the set.
 
 ---
 
-## 7. Environment & config
+## 8. Environment & config
 
 `.env.local` (gitignored):
 
@@ -214,22 +267,23 @@ Use the modern **publishable key** (`sb_publishable_…`), not the legacy `anon`
 
 ---
 
-## 8. Build order
+## 9. Build order
 
 1. **DB migration** — apply tables, indexes, trigger, RLS, realtime publication in one `apply_migration` call.
 2. **Scaffold Next.js** — `package.json`, `tsconfig.json`, `next.config.ts`, Tailwind v4 setup, `.gitignore`, `.env.example`.
-3. **Supabase clients** — `lib/supabase/client.ts` + `lib/supabase/server.ts`.
-4. **Root layout + global styles**.
-5. **Server page** with initial fetch.
-6. **Feed client component** — state, auth bootstrap, realtime channel.
-7. **Question form**.
-8. **Question card** with vote toggle.
-9. **`.env.local`** with the project's URL + publishable key.
-10. **Local smoke test** — `npm run dev`, open two browsers, post + vote, watch realtime sync.
+3. **Lib + types** — `lib/supabase/{client,server}.ts`, `lib/format.ts`, `lib/types.ts`, `lib/cn.ts`.
+4. **Hooks** — `use-anonymous-session`, `use-realtime-questions`, `use-voted-questions` (each in its own file).
+5. **Root layout + global styles**.
+6. **Server page** with initial fetch.
+7. **Presentational components** — `empty-state`, `char-counter`, `question-body`, `question-meta`, `upvote-button` (props-only, no effects).
+8. **Composite components** — `question-card`, `question-list`, `question-form`.
+9. **Feed composition root** — wires hooks into the components above.
+10. **`.env.local`** with the project's URL + publishable key.
+11. **Local smoke test** — `npm run dev`, open two browsers, post + vote, watch realtime sync.
 
 ---
 
-## 9. Out of scope for the MVP
+## 10. Out of scope for the MVP
 
 Listed so we don't accidentally drift:
 
@@ -244,7 +298,7 @@ Listed so we don't accidentally drift:
 
 ---
 
-## 10. Open questions
+## 11. Open questions
 
 These are intentionally left for confirmation before we build:
 
